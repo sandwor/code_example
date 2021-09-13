@@ -1,0 +1,152 @@
+#include <iostream>
+#include <cmath>
+#include <iomanip>
+
+using namespace std;
+
+/*
+Function Distribution constructs a uniform partition of a section (a , b) 
+of 10 parts by points a = x0 , x1, ..., xN = b.
+Distribution is constructed by
+a - first segment boundary
+b - second segment boundary
+num - number of split parts
+distr - array of nodes
+chunk - step calculation
+*/
+double *Distribution (double a, double b, int num) {
+    double *distr = new double[num]; //array declaration with split values
+    double chunk = (b - a) / num; //step calcualtion
+    distr[0] = a; //first value is equal to the first boundary of the segment
+    distr[num] = b; //last value is equal to the second boundary of the segment
+    
+    /*
+    calculating each subsequent value and assigning it
+    to the partitioned array
+    */
+    for(int i = 1; i < num; i++) {
+        distr[i] = chunk + distr[i-1];
+    }
+    
+    return distr;
+}
+
+/*
+Function FunctionValues calculates the values of the 
+f(x) function from the interpolation node job:
+y0 = f(x0), y1 = f(x1), ..., yN = f(xN).
+FunctionValues is constructed by
+distr - array of nodes
+n - number of split parts
+funval - array of function values
+*/
+double* FunctionValues (double *distr, int n) {
+    double *funval = new double[n]; //array declaration with function values
+    
+    /*
+    calculating y values by substituting x in the formula: sqrt(1+(sin(sqrt(x)))^2)
+    */
+    for(int i = 0; i <= n; i++) {
+        funval[i] = pow(1 + pow(sin(pow(distr[i], 0.5)), 2), 0.5);
+    }
+    
+    return funval;
+}
+
+/*
+Function LagrangePolinomial calculates Lagrange 
+polinomial value at the point xx.
+Lagrange polinomial is constructed by 
+x - array of nodes
+y - array of function values
+n+1 - size of arrays x, y
+xx - point at which Lagrange polinomial is calculated
+*/
+double LagrangePolinomial (double *x, double *y, int n, double xx) {
+    double l; //for lagrange polinomial value, calculated at the point xx
+    double q; //for each single polinomial Q[i])
+    l = 0.0;
+    
+    for(int i = 0; i <= n; i++) {
+        q = 1.0; //we calculated new Q[i]
+        for(int j = 0; j <= n; j++) {
+            if(j != i)
+            q = q* (xx - x[j]) / (x[i] - x[j]);
+        }
+        l = l + y[i]* q;
+    }
+    
+    return l;
+}
+
+/*
+Function InterpolationAccuracy calculates the 
+interpolation accuracy at x points.
+Interpolation accuracy is constructed by 
+y - array of function values
+l - array of Lagrange polinomial values
+n - number of split parts
+sigma - array of interpolation accuracy values
+*/
+double* InterpolationAccuracy (double *y, double *l, int n) {
+    double *sigma = new double[n]; //array declaration with interpolation accuracy values
+    
+    for(int i = 0; i <= n; i++) { //calculate the values (|l[i] - y[i]|)
+        sigma[i] = abs(l[i] - y[i]);
+    }
+    
+    return sigma;
+}
+
+/*
+Function PrintTable prints table with values found.
+Print table is constructed by
+x_values - array of nodes
+y_values - array of function values
+l_values - array of Lagrange polinomial values
+s_values - array of interpolation accuracy values
+n - number of split parts
+*/
+double PrintTable (double *x_values, double *y_values, double *l_values, double *s_values, int n) {
+    for(int i = 0; i <= n; i++) { //alternately display the values of all arrays
+        cout << setw(15) << x_values[i] << setw(15) << y_values[i] << setw(15) 
+        << l_values[i] << setw(15) << s_values[i] << endl;
+    }
+}
+
+int main() {
+    int n = 10; //number of points
+    double a = 0; //first segment boundary
+    double b = pow(M_PI, 2); //second segment boundary
+    
+    /*
+    assign values to the lists by calling functions
+    */
+    double *xs = Distribution(a, b, n); 
+    double *ys = FunctionValues(xs, n);
+    double *ls = new double[n];
+    for(int i = 0; i <= n; i++) {
+        ls[i] = LagrangePolinomial(xs, ys, n, xs[i]);
+    }
+    double *ss = InterpolationAccuracy (ys, ls, n);
+    /*
+    Print the results of the first three points
+    */
+    cout << "The results of the implementation of points 1, 2, 3:" << endl << endl;
+    PrintTable(xs, ys, ls, ss, n);
+    
+    int m = 30; //another number of points
+    //assign values to the another lists by calling functions
+    double *xsm = Distribution(a, b, m); 
+    double *ysm = FunctionValues(xsm, m);
+    double *lsm = new double[m];
+    for(int i = 0; i <= m; i++) {
+        lsm[i] = LagrangePolinomial(xsm, ysm, m, xs[i]);
+    }
+    double *ssm = InterpolationAccuracy (ysm, lsm, m);
+    /*
+    Print the results of 4 and 5 points
+    */
+    cout << endl << "The results of the implementation of points 4, 5:" << endl << endl;
+    PrintTable(xsm, ysm, lsm, ssm, m);
+}
